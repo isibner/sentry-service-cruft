@@ -1,0 +1,21 @@
+<html>
+  <head></head>
+  <body>
+    <h1>Code cruft for {{repoId}}:</h1>
+    <p><a href="data.json">View as JSON</a></p>
+    {{#each cruft}}
+        <ul>
+          <li><h3>{{@key}}</h3></li>
+          <ol>
+          {{#each this}}
+          <li><ul>
+              <li><b>File:</b> {{file}}</li>
+              <li><b>Line:</b> {{contents}}</li>
+              <li><b>Line number:</b> {{lineNumber}}</li>
+          </ul></li>
+          {{/each}}
+          </ol>
+        </ul>
+    {{/each}}
+  </body>
+</html>

@@ -1,0 +1,38 @@
+{
+  "name": "sentry-service-cruft",
+  "version": "1.0.0",
+  "description": "Cruft tracking service for Sentry",
+  "main": "dist/index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "keywords": [
+    "todobot",
+    "github"
+  ],
+  "author": "Ian Sibner <sibnerian@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "coffee-script": "^1.9.3",
+    "coffeelint-newline-at-eof": "^0.4.1",
+    "del": "^1.2.0",
+    "gulp": "^3.9.0",
+    "gulp-coffee": "^2.3.1",
+    "gulp-watch": "^4.3.2",
+    "gulp-coffeelint": "^0.5.0"
+  },
+  "peerDependencies": {
+    "express": "4.x",
+    "handlebars": "3.x",
+    "connect-flash": "<1",
+    "mongoose": "3.x",
+    "mongoose-findorcreate": "<1"
+  },
+  "dependencies": {
+    "istextorbinary": "^1.0.2",
+    "lodash": "^3.10.0"
+  }
+}
