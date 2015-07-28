@@ -35,19 +35,19 @@ class CruftService
   initializeAuthEndpoints: (router) ->
 
   initializeOtherEndpoints: (router) ->
+
+  initializePublicEndpoints: (router) ->
     router.get '/:sourceProviderName/:repoId', (req, res, next) =>
-      userId = req.user._id
       {sourceProviderName, repoId} = req.params
-      @CruftTrackModel.findOne {sourceProviderName, repoId, userId}, (err, model) =>
+      @CruftTrackModel.findOne {sourceProviderName, repoId}, (err, model) =>
         return next(err) if err
         return next(new Error('No cruft service has been initialized at that url.')) if not model?
         res.set 'Content-Type', 'text/html'
         res.send @template(model)
 
     router.get '/:sourceProviderName/:repoId/data.json', (req, res, next) =>
-      userId = req.user._id
       {sourceProviderName, repoId} = req.params
-      @CruftTrackModel.findOne {sourceProviderName, repoId, userId}, (err, model) =>
+      @CruftTrackModel.findOne {sourceProviderName, repoId}, (err, model) =>
         return next(err) if err
         return next(new Error('No cruft service has been initialized at that url.')) if not model?
         res.set 'Content-Type', 'text/json'
