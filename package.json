@@ -1,6 +1,6 @@
 {
   "name": "sentry-service-cruft",
-  "version": "1.0.0",
+  "version": "0.2.0",
   "description": "Cruft tracking service for Sentry",
   "main": "dist/index.js",
   "directories": {
