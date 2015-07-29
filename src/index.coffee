@@ -5,7 +5,9 @@ url = require 'url'
 fs = require 'fs'
 querystring = require 'querystring'
 isTextOrBinary = require 'istextorbinary'
-
+moment = require 'moment'
+child_process = require 'child_process'
+async = require 'async'
 
 CONSTANTS = {
   NAME: 'cruft'
@@ -43,6 +45,9 @@ class CruftService
         return next(err) if err
         return next(new Error('No cruft service has been initialized at that url.')) if not model?
         res.set 'Content-Type', 'text/html'
+        model.cruft = _.mapValues model.cruft, (cruftArr) ->
+          return _.map cruftArr, (cruftItem) ->
+            return _.extend cruftItem, {formattedDate: moment(cruftItem.date, 'YYYY-MM-DD HH:mm:ss Z').fromNow()}
         res.send @template(model)
 
     router.get '/:sourceProviderName/:repoId/data.json', (req, res, next) =>
@@ -66,7 +71,7 @@ class CruftService
       else
         callback(null, successMessage)
 
-  handleInitialRepoData: (repoModel, {files, tempPath}, callback) ->
+  _handleData: (repoModel, files, tempPath, callback) ->
     {repoId, userId, sourceProviderName} = repoModel
     cruft = {}
     for cruftType in @config.cruft
@@ -75,32 +80,31 @@ class CruftService
       callback(err) if err
       for file in files
         if isTextOrBinary.isTextSync(file, fs.readFileSync(file))
+          relativeFilename = path.relative(tempPath, file)
           lines = fs.readFileSync(file, 'utf8').split('\n')
           for line, lineNumber in lines
             for cruftType in @config.cruft
               if cruftType.regex.test(line)
-                cruft[cruftType.name].push {'lineNumber': lineNumber + 1, contents: line, file: path.relative(tempPath, file)}
-      model.cruft = cruft
-      model.markModified 'cruft'
-      model.save(callback)
+                cruft[cruftType.name].push {'lineNumber': lineNumber + 1, contents: line, file: relativeFilename}
+      allCruft = _(cruft).map(_.identity).flatten().value()
+      async.eachLimit allCruft, 25, ((cruftItem, cb) ->
+        child_process.exec "git blame -l -L #{cruftItem.lineNumber},+1 -- #{cruftItem.file}", {cwd: tempPath}, (err, stdout) ->
+          cb(err) if err?
+          importantPart = stdout.substring(0, stdout.indexOf(')') + 1)
+          committerName = importantPart.split('(')[1].split(/[\d]{4}\-[\d]{2}\-[\d]{2}/i)[0].trim()
+          commitDate = importantPart.match(/[\d]{4}\-[\d]{2}\-[\d]{2} [\d]{2}:[\d]{2}:[\d]{2} (\+|\-)?[\d]{4}/i)[0]
+          cruftItem.committer = committerName
+          cruftItem.date = commitDate
+          cb()
+      ), (err) ->
+        callback(err) if err?
+        model.cruft = cruft
+        model.markModified 'cruft'
+        model.save(callback)
 
-  handleHookRepoData: (repoModel, {files, tempPath}, callback) ->
-    {repoId, userId, sourceProviderName} = repoModel
-    cruft = {}
-    for cruftType in @config.cruft
-      cruft[cruftType.name] = []
-    @CruftTrackModel.findOne {repoId, userId, sourceProviderName}, (err, model) =>
-      callback(err) if err
-      for file in files
-        if isTextOrBinary.isTextSync(file, fs.readFileSync(file))
-          lines = fs.readFileSync(file, 'utf8').split('\n')
-          for line, lineNumber in lines
-            for cruftType in @config.cruft
-              if cruftType.regex.test(line)
-                cruft[cruftType.name].push {'lineNumber': lineNumber + 1, contents: line, file: path.relative(tempPath, file)}
-      model.cruft = cruft
-      model.markModified 'cruft'
-      model.save(callback)
+  handleInitialRepoData: (repoModel, {files, tempPath}, callback) -> @_handleData(repoModel, files, tempPath, callback)
+
+  handleHookRepoData: (repoModel, {files, tempPath}, callback) -> @_handleData(repoModel, files, tempPath, callback)
 
   deactivateServiceForRepo: (repoModel, callback) ->
     {repoId, userId, sourceProviderName} = repoModel

@@ -32,7 +32,9 @@
     "mongoose-findorcreate": "<1"
   },
   "dependencies": {
+    "async": "^1.4.0",
     "istextorbinary": "^1.0.2",
-    "lodash": "^3.10.0"
+    "lodash": "^3.10.0",
+    "moment": "^2.10.6"
   }
 }
