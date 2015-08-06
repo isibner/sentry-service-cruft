@@ -1,13 +1,14 @@
 {
   "name": "sentry-service-cruft",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Cruft tracking service for Sentry",
   "main": "dist/index.js",
   "directories": {
     "test": "test"
   },
   "scripts": {
-    "test": "mocha"
+    "test": "mocha",
+    "prepublish": "gulp"
   },
   "keywords": [
     "todobot",

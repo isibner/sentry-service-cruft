@@ -19,7 +19,6 @@ CONSTANTS = {
 class CruftService
   constructor: ({@config, @packages, @db, @sourceProviders}) ->
     {mongoose, 'mongoose-findorcreate': findOrCreate} = @packages
-    console.log @config
     CruftTrackSchema = new mongoose.Schema {
       repoId: {type: String, required: true},
       userId: {type: String, required: true},
