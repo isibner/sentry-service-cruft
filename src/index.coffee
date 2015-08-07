@@ -70,24 +70,24 @@ class CruftService
       else
         callback(null, successMessage)
 
-  _handleData: (repoModel, files, tempPath, callback) ->
+  _handleData: (repoModel, files, repoPath, callback) ->
     {repoId, userId, sourceProviderName} = repoModel
     cruft = {}
-    for cruftType in @config.cruft
+    for cruftType in @config.cruft.cruftTypes
       cruft[cruftType.name] = []
     @CruftTrackModel.findOne {repoId, userId, sourceProviderName}, (err, model) =>
       callback(err) if err
       for file in files
         if isTextOrBinary.isTextSync(file, fs.readFileSync(file))
-          relativeFilename = path.relative(tempPath, file)
+          relativeFilename = path.relative(repoPath, file)
           lines = fs.readFileSync(file, 'utf8').split('\n')
           for line, lineNumber in lines
-            for cruftType in @config.cruft
+            for cruftType in @config.cruft.cruftTypes
               if cruftType.regex.test(line)
                 cruft[cruftType.name].push {'lineNumber': lineNumber + 1, contents: line, file: relativeFilename}
       allCruft = _(cruft).map(_.identity).flatten().value()
       async.eachLimit allCruft, 25, ((cruftItem, cb) ->
-        child_process.exec "git blame -l -L #{cruftItem.lineNumber},+1 -- #{cruftItem.file}", {cwd: tempPath}, (err, stdout) ->
+        child_process.exec "git blame -l -L #{cruftItem.lineNumber},+1 -- #{cruftItem.file}", {cwd: repoPath}, (err, stdout) ->
           cb(err) if err?
           importantPart = stdout.substring(0, stdout.indexOf(')') + 1)
           committerName = importantPart.split('(')[1].split(/[\d]{4}\-[\d]{2}\-[\d]{2}/i)[0].trim()
@@ -101,9 +101,9 @@ class CruftService
         model.markModified 'cruft'
         model.save(callback)
 
-  handleInitialRepoData: (repoModel, {files, tempPath}, callback) -> @_handleData(repoModel, files, tempPath, callback)
+  handleInitialRepoData: ({repoModel, files, repoPath}, callback) -> @_handleData(repoModel, files, repoPath, callback)
 
-  handleHookRepoData: (repoModel, {files, tempPath}, callback) -> @_handleData(repoModel, files, tempPath, callback)
+  handleHookRepoData: ({repoModel, files, repoPath}, callback) -> @_handleData(repoModel, files, repoPath, callback)
 
   deactivateServiceForRepo: (repoModel, callback) ->
     {repoId, userId, sourceProviderName} = repoModel
