@@ -12,7 +12,7 @@ async = require 'async'
 CONSTANTS = {
   NAME: 'cruft'
   DISPLAY_NAME: 'Cruft Tracker'
-  ICON_FILE_PATH: path.join(__dirname, '../', '123.png')
+  ICON_FILE_PATH: path.join(__dirname, '../', 'invalid-code-icon.png')
   AUTH_ENDPOINT: null
 }
 
