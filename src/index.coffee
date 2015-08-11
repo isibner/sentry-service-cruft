@@ -16,13 +16,13 @@ class CruftService
   @ICON_FILE_PATH: path.join(__dirname, '../', 'invalid-code-icon.png')
   @AUTH_ENDPOINT: null
 
-  constructor: ({@config, @packages, @db, @sourceProviders}) ->
+  constructor: ({@config, @packages, @db, @sources}) ->
     {mongoose, 'mongoose-findorcreate': findOrCreate} = @packages
     @config.cruftTypes ?= []
     CruftTrackSchema = new mongoose.Schema {
       repoId: {type: String, required: true},
       userId: {type: String, required: true},
-      sourceProviderName: {type: String, required: true},
+      sourceName: {type: String, required: true},
       cruft: mongoose.Schema.Types.Mixed
     }
     CruftTrackSchema.plugin findOrCreate
@@ -37,9 +37,9 @@ class CruftService
   initializeOtherEndpoints: (router) ->
 
   initializePublicEndpoints: (router) ->
-    router.get '/:sourceProviderName/:repoId', (req, res, next) =>
-      {sourceProviderName, repoId} = req.params
-      @CruftTrackModel.findOne {sourceProviderName, repoId}, (err, model) =>
+    router.get '/:sourceName/:repoId', (req, res, next) =>
+      {sourceName, repoId} = req.params
+      @CruftTrackModel.findOne {sourceName, repoId}, (err, model) =>
         return next(err) if err
         return next(new Error('No cruft service has been initialized at that url.')) if not model?
         res.set 'Content-Type', 'text/html'
@@ -48,19 +48,19 @@ class CruftService
             return _.extend cruftItem, {formattedDate: moment(cruftItem.date, 'YYYY-MM-DD HH:mm:ss Z').fromNow()}
         res.send @template(model)
 
-    router.get '/:sourceProviderName/:repoId/data.json', (req, res, next) =>
-      {sourceProviderName, repoId} = req.params
-      @CruftTrackModel.findOne {sourceProviderName, repoId}, (err, model) =>
+    router.get '/:sourceName/:repoId/data.json', (req, res, next) =>
+      {sourceName, repoId} = req.params
+      @CruftTrackModel.findOne {sourceName, repoId}, (err, model) =>
         return next(err) if err
         return next(new Error('No cruft service has been initialized at that url.')) if not model?
         res.set 'Content-Type', 'text/json'
         res.send model.cruft
 
   activateServiceForRepo: ({repoModel, repoConfig}, callback) ->
-    {repoId, userId, sourceProviderName} = repoModel
-    @CruftTrackModel.findOrCreate {repoId, userId, sourceProviderName}, (err, model, created) =>
+    {repoId, userId, sourceName} = repoModel
+    @CruftTrackModel.findOrCreate {repoId, userId, sourceName}, (err, model, created) =>
       return callback(err) if err
-      successMessage = "Cruft tracker activated! View at <a href=\"/plugins/services/#{@NAME}/#{sourceProviderName}/#{encodeURIComponent(repoId)}/\">this link</a>"
+      successMessage = "Cruft tracker activated! View at <a href=\"/plugins/services/#{@NAME}/#{sourceName}/#{encodeURIComponent(repoId)}/\">this link</a>"
       if not created
         model.cruft = {}
         model.markModified 'cruft'
@@ -70,7 +70,7 @@ class CruftService
         callback(null, successMessage)
 
   _handleData: ({repoModel, files, repoPath, repoConfig}, callback) ->
-    {repoId, userId, sourceProviderName} = repoModel
+    {repoId, userId, sourceName} = repoModel
     repoConfig ?= {}
     repoConfig.cruftTypes ?= []
     cruftTypes = @config.cruftTypes.concat(repoConfig.cruftTypes)
@@ -83,7 +83,7 @@ class CruftService
     cruft = {}
     for cruftType in cruftTypes
       cruft[cruftType.name] = []
-    @CruftTrackModel.findOne {repoId, userId, sourceProviderName}, (err, model) =>
+    @CruftTrackModel.findOne {repoId, userId, sourceName}, (err, model) =>
       callback(err) if err
       for file in files
         if isTextOrBinary.isTextSync(file, fs.readFileSync(file))
@@ -114,8 +114,8 @@ class CruftService
   handleHookRepoData: ({repoModel, files, repoPath, repoConfig}, callback) -> @_handleData({repoModel, files, repoPath, repoConfig}, callback)
 
   deactivateServiceForRepo: ({repoModel, repoConfig}, callback) ->
-    {repoId, userId, sourceProviderName} = repoModel
-    @CruftTrackModel.findOneAndRemove {repoId, userId, sourceProviderName}, (err) =>
+    {repoId, userId, sourceName} = repoModel
+    @CruftTrackModel.findOneAndRemove {repoId, userId, sourceName}, (err) =>
       return callback(err) if err
       callback(null, "#{@DISPLAY_NAME} removed successfully.")
 

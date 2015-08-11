@@ -1,6 +1,6 @@
 {
   "name": "sentry-service-cruft",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Cruft tracking service for Sentry",
   "main": "dist/index.js",
   "directories": {
@@ -11,8 +11,9 @@
     "prepublish": "gulp"
   },
   "keywords": [
-    "todobot",
-    "github"
+    "sentry",
+    "service",
+    "cruft"
   ],
   "author": "Ian Sibner <sibnerian@gmail.com>",
   "license": "MIT",
